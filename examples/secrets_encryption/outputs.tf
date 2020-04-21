@@ -22,8 +22,3 @@ output "region" {
   description = "AWS region."
   value       = var.region
 }
-
-output "node_groups" {
-  description = "Outputs from node groups"
-  value       = module.eks.node_groups
-}
