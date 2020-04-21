@@ -299,3 +299,27 @@ variable "node_groups" {
   type        = any
   default     = []
 }
+
+variable "fargate_profiles" {
+  description = "A list of maps defining fargate profiles. See fargate_profiles_defaults for valid keys."
+  type        = any
+  default     = []
+}
+
+variable "fargate_profiles_defaults" {
+  description = "Override default values for target groups. See fargate_profiles_defaults_defaults in local.tf for valid keys."
+  type        = any
+  default     = {}
+}
+
+variable "manage_fargate_iam_resources" {
+  description = "Whether to let the module manage Fargate IAM resources. If set to false, fargate_iam_role_name must be specified."
+  type        = bool
+  default     = true
+}
+
+variable "fargate_iam_role_name" {
+  description = "User defined fargate profiles role name."
+  type        = string
+  default     = ""
+}
