@@ -143,11 +143,8 @@ locals {
     "t2.small",
     "t2.xlarge"
   ]
-<<<<<<< HEAD
 
   node_groups = { for node_group in var.node_groups : node_group["name"] => node_group }
   
   fargate_profiles = { for fargate_profile in var.fargate_profiles : fargate_profile["name"] => fargate_profile }
-=======
->>>>>>> 2fd078e7c1c9df29c6c7a90989060bf84075af9d
 }
