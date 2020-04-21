@@ -28,7 +28,7 @@ variable "cluster_security_group_id" {
 variable "cluster_version" {
   description = "Kubernetes version to use for the EKS cluster."
   type        = string
-  default     = "1.14"
+  default     = "1.15"
 }
 
 variable "config_output_path" {
@@ -189,7 +189,7 @@ variable "kubeconfig_name" {
 variable "cluster_create_timeout" {
   description = "Timeout value when creating the EKS cluster."
   type        = string
-  default     = "15m"
+  default     = "30m"
 }
 
 variable "cluster_delete_timeout" {
@@ -198,8 +198,14 @@ variable "cluster_delete_timeout" {
   default     = "15m"
 }
 
-variable "local_exec_interpreter" {
-  description = "Command to run for local-exec resources. Must be a shell-style interpreter. If you are on Windows Git Bash is a good choice."
+variable "wait_for_cluster_cmd" {
+  description = "Custom local-exec command to execute for determining if the eks cluster is healthy. Cluster endpoint will be available as an environment variable called ENDPOINT"
+  type        = string
+  default     = "for i in `seq 1 60`; do wget --no-check-certificate -O - -q $ENDPOINT/healthz >/dev/null && exit 0 || true; sleep 5; done; echo TIMEOUT && exit 1"
+}
+
+variable "wait_for_cluster_interpreter" {
+  description = "Custom local-exec command line interpreter for the command to determining if the eks cluster is healthy."
   type        = list(string)
   default     = ["/bin/sh", "-c"]
 }
@@ -234,6 +240,12 @@ variable "iam_path" {
   default     = "/"
 }
 
+variable "cluster_endpoint_private_access_cidrs" {
+  description = "List of CIDR blocks which can access the Amazon EKS private API server endpoint, when public access is disabled"
+  type        = list(string)
+  default     = ["0.0.0.0/0"]
+}
+
 variable "cluster_endpoint_private_access" {
   description = "Indicates whether or not the Amazon EKS private API server endpoint is enabled."
   type        = bool
@@ -244,6 +256,12 @@ variable "cluster_endpoint_public_access" {
   description = "Indicates whether or not the Amazon EKS public API server endpoint is enabled."
   type        = bool
   default     = true
+}
+
+variable "cluster_endpoint_public_access_cidrs" {
+  description = "List of CIDR blocks which can access the Amazon EKS public API server endpoint."
+  type        = list(string)
+  default     = ["0.0.0.0/0"]
 }
 
 variable "manage_cluster_iam_resources" {
@@ -270,18 +288,6 @@ variable "workers_role_name" {
   default     = ""
 }
 
-variable "manage_worker_autoscaling_policy" {
-  description = "Whether to let the module manage the cluster autoscaling iam policy."
-  type        = bool
-  default     = true
-}
-
-variable "attach_worker_autoscaling_policy" {
-  description = "Whether to attach the module managed cluster autoscaling iam policy to the default worker IAM role. This requires `manage_worker_autoscaling_policy = true`"
-  type        = bool
-  default     = true
-}
-
 variable "attach_worker_cni_policy" {
   description = "Whether to attach the Amazon managed `AmazonEKS_CNI_Policy` IAM policy to the default worker IAM role. WARNING: If set `false` the permissions must be assigned to the `aws-node` DaemonSet pods via another method or nodes will not be able to join the cluster."
   type        = bool
@@ -294,10 +300,37 @@ variable "create_eks" {
   default     = true
 }
 
-variable "node_groups" {
-  description = "A list of maps defining node group configurations to be defined using AWS EKS Managed Node Groups. See workers_group_defaults for valid keys."
+variable "node_groups_defaults" {
+  description = "Map of values to be applied to all node groups. See `node_groups` module's documentaton for more details"
   type        = any
-  default     = []
+  default     = {}
+}
+
+variable "node_groups" {
+  description = "Map of map of node groups to create. See `node_groups` module's documentation for more details"
+  type        = any
+  default     = {}
+}
+
+variable "enable_irsa" {
+  description = "Whether to create OpenID Connect Provider for EKS to enable IRSA"
+  type        = bool
+  default     = false
+}
+
+variable "eks_oidc_root_ca_thumbprint" {
+  type        = string
+  description = "Thumbprint of Root CA for EKS OIDC, Valid until 2037"
+  default     = "9e99a48a9960b14926bb7f3b02e22da2b0ab7280"
+}
+
+variable "cluster_encryption_config" {
+  description = "Configuration block with encryption configuration for the cluster. See examples/secrets_encryption/main.tf for example format"
+  type = list(object({
+    provider_key_arn = string
+    resources        = list(string)
+  }))
+  default = []
 }
 
 variable "fargate_profiles" {
